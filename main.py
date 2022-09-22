@@ -1,10 +1,17 @@
+from gevent import monkey
+monkey.patch_all()
 import os
 import requests
 import json
+
+from gevent.pywsgi import WSGIServer
 from flask import Flask, render_template, abort
+from flask_compress import Compress
+
 
 app = Flask(__name__)
-
+compress = Compress()
+compress.init_app(app)
 
 def get_url(category):
     r = requests.get(
@@ -33,5 +40,10 @@ def category(category):
 def page_not_found(error):
     return render_template('404.html', title='404'), 404
 
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template('500.html', title='500'), 500
 
-app.run(host='0.0.0.0', port=81)
+if __name__ == "__main__":
+  http_server = WSGIServer(("0.0.0.0", 81), app)
+  http_server.serve_forever()
